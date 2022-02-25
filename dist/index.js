@@ -12,12 +12,9 @@ const express = require('express');
 const app = express();
 const axios = require('axios').default;
 require('dotenv').config();
-const { PORT, SPOONACULAR_KEY } = process.env;
-const x = 4;
+const { PORT } = process.env;
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const response = yield axios.get(`https://api.spoonacular.com/recipes/complexSearch?apiKey=${SPOONACULAR_KEY}`);
-    console.log(response.data);
-    res.send('received:\n' + response.data.results);
+    res.send(`received`);
 }));
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);
