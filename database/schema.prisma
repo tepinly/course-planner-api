@@ -1,0 +1,26 @@
+datasource db {
+  url      = env("DB_URL")
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Lesson {
+  id Int @id @default(autoincrement())
+  title String
+  description String
+  updatedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  recurrence Recurrence?
+}
+
+model Recurrence {
+  id Int @id @default(autoincrement())
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int
+  interval Int?
+  expire Int?
+  start Int
+}
