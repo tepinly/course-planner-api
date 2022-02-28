@@ -28,8 +28,28 @@ const weekDays = {
 };
 function nextDay(d, dow) {
     d.setDate(d.getDate() + (dow + (7 - d.getDay())) % 7);
-    return d;
+    return d.getTime() / 1000;
 }
+const createLessonRecord = (title, description) => __awaiter(void 0, void 0, void 0, function* () {
+    const newLesson = yield prisma.lesson.create({
+        data: {
+            title: title,
+            description: description
+        }
+    });
+    return newLesson;
+});
+const createRecurrenceRecord = (id, interval, startDate, expDate) => __awaiter(void 0, void 0, void 0, function* () {
+    const newRecurrence = yield prisma.recurrence.create({
+        data: {
+            lessonId: id,
+            interval: interval,
+            start: startDate,
+            expire: expDate
+        }
+    });
+    return newRecurrence;
+});
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send(`received`);
 }));
@@ -38,17 +58,31 @@ app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
  * Recurrence is array of week days
  */
 app.get('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const lesson = req.body[0];
-    if (lesson.recurrence.length > 0) {
-        if (lesson.recurrence[0].match('all')) {
-            const interval = 24 * 60 * 60 * 1000;
-            const startDate = new Date(lesson.start).getTime();
-            const expDate = new Date(lesson.exp).getTime();
-            res.send(`${interval} - ${startDate} - ${expDate}`);
-            return;
-        }
-        const days = lesson.recurrence.filter((day) => day in weekDays).map((day) => weekDays[day]);
+    let startDate = new Date(lesson.start).getTime() / 1000;
+    let expDate = new Date((_a = lesson.exp) !== null && _a !== void 0 ? _a : lesson.start).getTime() / 1000;
+    let interval;
+    const newLesson = yield createLessonRecord(lesson.title, lesson.description);
+    if (lesson.recurrence.length === 0) {
+        const newRecurrence = yield createRecurrenceRecord(yield newLesson.id, interval = 0, startDate, expDate);
     }
+    else if (lesson.recurrence[0].match('all')) {
+        interval = 24 * 60 * 60;
+        const newRecurrence = yield createRecurrenceRecord(yield newLesson.id, interval, startDate, expDate);
+    }
+    else {
+        const days = lesson.recurrence.filter((day) => day in weekDays).map((day) => weekDays[day]);
+        interval = 7 * 24 * 60 * 60;
+        const temp = new Date(startDate * 1000);
+        const lessonKey = yield newLesson.id;
+        for (const day of days) {
+            startDate = nextDay(temp, day);
+            console.log(startDate + "\n");
+            const newRecurrence = yield createRecurrenceRecord(lessonKey, interval, startDate, expDate);
+        }
+    }
+    res.send(`Record created 👌`);
 }));
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);
