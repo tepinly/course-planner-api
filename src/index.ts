@@ -1,7 +1,6 @@
 const express = require('express')
 const app = express()
 app.use(express.json())
-const axios = require('axios').default
 const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
@@ -77,7 +76,7 @@ app.get('/lesson/create', async (req: any, res: any) => {
     interval = 24 * 60 * 60
     const newRecurrence = await createRecurrenceRecord(await newLesson.id, interval, startDate, expDate)
   }
-  
+
   else {
     const days: Array<number> = lesson.recurrence.filter((day: string) => day in weekDays).map((day: string)  => weekDays[day])
     interval = 7 * 24 * 60 * 60
