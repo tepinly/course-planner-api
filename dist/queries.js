@@ -8,6 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const createLessonRecord = (user, title, description) => __awaiter(void 0, void 0, void 0, function* () {
     const newLesson = yield prisma.lesson.create({
         data: {
@@ -37,7 +39,7 @@ const lessonRecurrence = (lessonId) => __awaiter(void 0, void 0, void 0, functio
             }
         }
     });
-    return recurrences;
+    return yield recurrences;
 });
 const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const lessons = yield prisma.lesson.findMany({
@@ -49,9 +51,9 @@ const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () 
     });
     let recurrences = [];
     for (const lesson of lessons) {
-        recurrences.push(lessonRecurrence(lesson.id));
+        recurrences.push(yield lessonRecurrence(lesson.id));
     }
-    return recurrences;
+    return { recurrences: recurrences, lessons: lessons };
 });
 module.exports = {
     createLessonRecord: createLessonRecord,

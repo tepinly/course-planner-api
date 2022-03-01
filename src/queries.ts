@@ -1,3 +1,6 @@
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
+
 const createLessonRecord = async (user: number, title: string, description: string) => {
   const newLesson = await prisma.lesson.create({
     data: {
@@ -9,7 +12,7 @@ const createLessonRecord = async (user: number, title: string, description: stri
   return newLesson
 }
 
-const createRecurrenceRecord = async (id: number, interval: number, startDate: number, expDate: number) => {
+const createRecurrenceRecord = async (id: number, interval: number, startDate: string, expDate: string) => {
   const newRecurrence = await prisma.recurrence.create({
     data: {
       lessonId: id,
@@ -30,7 +33,7 @@ const lessonRecurrence = async (lessonId: number) => {
     }
   })
 
-  return recurrences
+  return await recurrences
 }
 
 const fetchLessons = async (userId: number) => {
@@ -45,10 +48,10 @@ const fetchLessons = async (userId: number) => {
   let recurrences: Array<any> = []
 
   for (const lesson of lessons) {
-    recurrences.push(lessonRecurrence(lesson.id))
+    recurrences.push(await lessonRecurrence(lesson.id))
   }
 
-  return recurrences
+  return { recurrences: recurrences, lessons: lessons }
 }
 
 module.exports = {
