@@ -12,6 +12,7 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 const queries = require('./queries');
+const helper = require('./helper');
 require('dotenv').config();
 const { PORT } = process.env;
 const weekDays = {
@@ -24,12 +25,28 @@ const weekDays = {
     sat: 6,
     all: 7
 };
-function getKeyByValue(object, value) {
-    return Object.keys(object).find(key => object[key] === value);
-}
-function nextDay(d, dow) {
-    d.setDate(d.getDate() + (dow + (7 - d.getDay())) % 7);
-    return d.getTime() / 1000;
+function createRecurrence(lessonId, lesson, startDate, expDate) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let interval;
+        if (lesson.recurrence.length === 0) {
+            const newRecurrence = yield createRecurrenceRecord(lessonId, interval = 0, startDate, startDate);
+        }
+        else if (lesson.recurrence[0].match('all')) {
+            interval = 24 * 60 * 60;
+            const newRecurrence = yield createRecurrenceRecord(lessonId, interval, startDate, expDate);
+        }
+        else {
+            const days = lesson.recurrence.filter((day) => day in weekDays).map((day) => weekDays[day]);
+            interval = 7 * 24 * 60 * 60;
+            const temp = new Date(parseInt(startDate) * 1000);
+            const lessonKey = lessonId;
+            let start;
+            for (const day of days) {
+                start = String(nextDay(temp, day));
+                const newRecurrence = yield createRecurrenceRecord(lessonKey, interval, start, expDate);
+            }
+        }
+    });
 }
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send(`received`);
@@ -43,45 +60,30 @@ app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, funct
     const lesson = req.body[0];
     let startDate = String(new Date(lesson.start).getTime() / 1000);
     let expDate = String(new Date((_a = lesson.exp) !== null && _a !== void 0 ? _a : lesson.start).getTime() / 1000);
-    let interval;
-    const newLesson = yield queries.createLessonRecord(lesson.user, lesson.title, lesson.description);
-    if (lesson.recurrence.length === 0) {
-        const newRecurrence = yield queries.createRecurrenceRecord(yield newLesson.id, interval = 0, startDate, startDate);
-    }
-    else if (lesson.recurrence[0].match('all')) {
-        interval = 24 * 60 * 60;
-        const newRecurrence = yield queries.createRecurrenceRecord(yield newLesson.id, interval, startDate, expDate);
-    }
-    else {
-        const days = lesson.recurrence.filter((day) => day in weekDays).map((day) => weekDays[day]);
-        interval = 7 * 24 * 60 * 60;
-        const temp = new Date(parseInt(startDate) * 1000);
-        const lessonKey = yield newLesson.id;
-        let start;
-        for (const day of days) {
-            start = String(nextDay(temp, day));
-            const newRecurrence = yield queries.createRecurrenceRecord(lessonKey, interval, start, expDate);
-        }
-    }
+    const newLesson = yield createLessonRecord(lesson.user, lesson.title, lesson.description);
+    const created = yield createRecurrence(yield newLesson.id, lesson, startDate, expDate);
     res.send(`Record created 👌`);
 }));
 app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.body[0].user;
-    const userLessons = yield (queries.fetchLessons(userId));
+    const userLessons = yield (fetchLessons(userId));
     const schedule = [];
     let count;
     let start;
     let weekDay;
     let index = 0;
     for (const lesson of userLessons.recurrences) {
-        schedule.push({ lesson: index, title: userLessons.lessons[index].title, description: userLessons.lessons[index].description, content: [] });
+        schedule.push({ lessonId: userLessons.lessons[index].id, title: userLessons.lessons[index].title, description: userLessons.lessons[index].description, content: [] });
         for (const recurrence of lesson) {
             count = 0;
             start = new Date(parseInt(recurrence.start) * 1000);
             const expire = new Date(parseInt(recurrence.expire) * 1000);
             const interval = recurrence.interval;
             if (interval == 604800) {
-                count = Math.floor((expire.getDate() - start.getDate()) / 7);
+                while (start < expire) {
+                    count++;
+                    start.setDate(start.getDate() + 7);
+                }
                 weekDay = getKeyByValue(weekDays, (start).getDay());
             }
             else if (interval == 86400) {
@@ -93,16 +95,19 @@ app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, functio
                 count = 1;
             }
             schedule[index].content.push({
-                start: start.getDate() +
-                    "/" + (start.getMonth() + 1) +
-                    "/" + start.getFullYear(), lessons: count, repeat: weekDay, expires: expire.getDate() +
-                    "/" + (expire.getMonth() + 1) +
-                    "/" + expire.getFullYear()
+                recurrenceId: recurrence.id,
+                start: stringifyDate(start), lessons: count, repeat: weekDay, expires: stringifyDate(expire)
             });
         }
         index++;
     }
     res.send(schedule);
+}));
+app.post('/lesson/update', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const request = req.body[0];
+    const lessonId = request.lesson;
+    const weekIndex = request.weekIndex;
+    const lesson = request.newDate;
 }));
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);
