@@ -125,6 +125,14 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
   res.send(schedule)
 })
 
+app.post('/lesson/update', async (req: any, res: any) => {
+  const request = req.body[0]
+  const lessonId: number = request.lesson
+  const weekIndex: number = request.weekIndex
+  const lesson:number = request.newDate
+
+})
+
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`)
 })
