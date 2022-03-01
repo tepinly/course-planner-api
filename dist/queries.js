@@ -51,6 +51,7 @@ const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () 
     for (const lesson of lessons) {
         recurrences.push(lessonRecurrence(lesson.id));
     }
+    return recurrences;
 });
 module.exports = {
     createLessonRecord: createLessonRecord,

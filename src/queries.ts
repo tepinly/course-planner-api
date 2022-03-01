@@ -47,6 +47,8 @@ const fetchLessons = async (userId: number) => {
   for (const lesson of lessons) {
     recurrences.push(lessonRecurrence(lesson.id))
   }
+
+  return recurrences
 }
 
 module.exports = {
