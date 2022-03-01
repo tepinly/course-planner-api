@@ -9,7 +9,7 @@ const createLessonRecord = async (user: number, title: string, description: stri
       description: description
     }
   })
-  return newLesson
+  return await newLesson
 }
 
 const createRecurrenceRecord = async (id: number, interval: number, startDate: string, expDate: string) => {
@@ -21,10 +21,10 @@ const createRecurrenceRecord = async (id: number, interval: number, startDate: s
       expire: expDate
     }
   })
-  return newRecurrence
+  return await newRecurrence
 }
 
-const lessonRecurrence = async (lessonId: number) => {
+const fetchRecurrence = async (lessonId: number) => {
   const recurrence = await prisma.recurrence.findMany({
     where: {
       lessonId: {
@@ -60,10 +60,10 @@ const fetchLessons = async (userId: number) => {
   let recurrences: Array<any> = []
 
   for (const lesson of lessons) {
-    recurrences.push(await lessonRecurrence(lesson.id))
+    recurrences.push(await fetchRecurrence(lesson.id))
   }
 
-  return { recurrences: recurrences, lessons: lessons }
+  return { recurrences: recurrences, lessons: await lessons }
 }
 
 const fetchUniqueLesson = async (lessonId: number) => {
@@ -75,9 +75,9 @@ const fetchUniqueLesson = async (lessonId: number) => {
     }
   })
 
-  let recurrence = await lessonRecurrence(lesson.id)
+  let recurrence = await fetchRecurrence(lesson.id)
 
-  return { recurrence: recurrence, lesson: lesson }
+  return { recurrence: recurrence, lesson: await lesson }
 }
 
 module.exports = {
