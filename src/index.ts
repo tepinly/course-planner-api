@@ -110,8 +110,8 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
         start: start.getDate() +
           "/" + (start.getMonth() + 1) +
           "/" + start.getFullYear(), lessons: count, repeat: weekDay, expires: expire.getDate() +
-            "/" + (expire.getMonth() + 1) +
-            "/" + expire.getFullYear() })
+          "/" + (expire.getMonth() + 1) +
+          "/" + expire.getFullYear() })
     }
     index++
   }
