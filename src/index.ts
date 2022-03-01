@@ -30,12 +30,12 @@ const weekDays: { [index: string]: number } = {
 async function createRecurrence(lessonId: number, lesson: Lesson, startDate: string, expDate: string) {
   let interval: number
   if (lesson.recurrence.length === 0) {
-    const newRecurrence = await createRecurrenceRecord(lessonId, interval = 0, startDate, startDate)
+    const newRecurrence = await queries.createRecurrenceRecord(lessonId, interval = 0, startDate, startDate)
   }
 
   else if (lesson.recurrence[0].match('all')) {
     interval = 24 * 60 * 60
-    const newRecurrence = await createRecurrenceRecord(lessonId, interval, startDate, expDate)
+    const newRecurrence = await queries.createRecurrenceRecord(lessonId, interval, startDate, expDate)
   }
  
   else {
@@ -46,8 +46,8 @@ async function createRecurrence(lessonId: number, lesson: Lesson, startDate: str
     let start: string
 
     for (const day of days) {
-      start = String(nextDay(temp, day))
-      const newRecurrence = await createRecurrenceRecord(lessonKey, interval, start, expDate)
+      start = String(helper.nextDay(temp, day))
+      const newRecurrence = await queries.createRecurrenceRecord(lessonKey, interval, start, expDate)
     }
   }
 }
@@ -64,15 +64,15 @@ app.post('/lesson/create', async (req: any, res: any) => {
   const lesson: Lesson = req.body[0]
   let startDate: string = String(new Date(lesson.start).getTime() / 1000)
   let expDate: string = String(new Date(lesson.exp ?? lesson.start).getTime() / 1000)
-  const newLesson = await createLessonRecord(lesson.user, lesson.title, lesson.description)
-  const created = await createRecurrence(await newLesson.id, lesson, startDate, expDate)
+  const newLesson = await queries.createLessonRecord(lesson.user, lesson.title, lesson.description)
+  const created = await queries.createRecurrence(await newLesson.id, lesson, startDate, expDate)
 
   res.send(`Record created 👌`)
 })
 
 app.get('/lesson/fetch', async (req: any, res: any) => {
   const userId: number = req.body[0].user
-  const userLessons = await (fetchLessons(userId))
+  const userLessons = await (queries.fetchLessons(userId))
 
   const schedule: Array<any> = []
   let count: number
@@ -93,7 +93,7 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
           count++
           start.setDate(start.getDate() + 7)
         }
-        weekDay = getKeyByValue(weekDays, (start).getDay())
+        weekDay = helper.getKeyByValue(weekDays, (start).getDay())
       }
       else if (interval == 86400) {
         count = expire.getDate() - start.getDate()
@@ -106,7 +106,7 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
 
       schedule[index].content.push({
         recurrenceId: recurrence.id,
-        start: stringifyDate(start), lessons: count, repeat: weekDay, expires: stringifyDate(expire) })
+        start: start, lessons: count, repeat: weekDay, expires: expire })
     }
     index++
   }
