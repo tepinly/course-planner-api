@@ -32,14 +32,14 @@ const createRecurrenceRecord = (id, interval, startDate, expDate) => __awaiter(v
     return newRecurrence;
 });
 const lessonRecurrence = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
-    const recurrences = yield prisma.recurrence.findMany({
+    const recurrence = yield prisma.recurrence.findMany({
         where: {
             lessonId: {
                 equals: lessonId
             }
         }
     });
-    return yield recurrences;
+    return yield recurrence;
 });
 const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const lessons = yield prisma.lesson.findMany({
@@ -54,6 +54,17 @@ const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () 
         recurrences.push(yield lessonRecurrence(lesson.id));
     }
     return { recurrences: recurrences, lessons: lessons };
+});
+const fetchUniqueLesson = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
+    const lesson = yield prisma.lesson.findUnique({
+        where: {
+            lesson: {
+                equals: lessonId
+            }
+        }
+    });
+    let recurrence = yield lessonRecurrence(lesson.id);
+    return { recurrence: recurrence, lesson: lesson };
 });
 module.exports = {
     createLessonRecord: createLessonRecord,
