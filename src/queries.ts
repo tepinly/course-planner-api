@@ -25,7 +25,7 @@ const createRecurrenceRecord = async (id: number, interval: number, startDate: s
 }
 
 const lessonRecurrence = async (lessonId: number) => {
-  const recurrences = await prisma.recurrence.findMany({
+  const recurrence = await prisma.recurrence.findMany({
     where: {
       lessonId: {
         equals: lessonId
@@ -33,7 +33,7 @@ const lessonRecurrence = async (lessonId: number) => {
     }
   })
 
-  return await recurrences
+  return await recurrence
 }
 
 const fetchLessons = async (userId: number) => {
