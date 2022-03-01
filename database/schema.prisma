@@ -21,7 +21,7 @@ model Recurrence {
   id Int @id @default(autoincrement())
   lesson Lesson @relation(fields: [lessonId], references: [id])
   lessonId Int
-  start BigInt
-  interval BigInt
-  expire BigInt
+  start String
+  interval Int
+  expire String
 }
