@@ -36,6 +36,18 @@ const lessonRecurrence = async (lessonId: number) => {
   return await recurrence
 }
 
+const fetchUniqueRecurrence = async (recurrenceId: number) => {
+  const recurrence = await prisma.recurrence.findUnique({
+    where: {
+      id: {
+        equals: recurrenceId
+      }
+    }
+  })
+
+  return await recurrence
+}
+
 const fetchLessons = async (userId: number) => {
   const lessons = await prisma.lesson.findMany({
     where: {
