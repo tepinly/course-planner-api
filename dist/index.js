@@ -29,9 +29,10 @@ function nextDay(d, dow) {
     d.setDate(d.getDate() + (dow + (7 - d.getDay())) % 7);
     return d.getTime() / 1000;
 }
-const createLessonRecord = (title, description) => __awaiter(void 0, void 0, void 0, function* () {
+const createLessonRecord = (user, title, description) => __awaiter(void 0, void 0, void 0, function* () {
     const newLesson = yield prisma.lesson.create({
         data: {
+            user: user,
             title: title,
             description: description
         }
@@ -62,7 +63,7 @@ app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, funct
     let startDate = new Date(lesson.start).getTime() / 1000;
     let expDate = new Date((_a = lesson.exp) !== null && _a !== void 0 ? _a : lesson.start).getTime() / 1000;
     let interval;
-    const newLesson = yield createLessonRecord(lesson.title, lesson.description);
+    const newLesson = yield createLessonRecord(lesson.user, lesson.title, lesson.description);
     if (lesson.recurrence.length === 0) {
         const newRecurrence = yield createRecurrenceRecord(yield newLesson.id, interval = 0, startDate, expDate);
     }
@@ -82,6 +83,8 @@ app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, funct
         }
     }
     res.send(`Record created 👌`);
+}));
+app.get(`lesson/fetch`, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 }));
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);

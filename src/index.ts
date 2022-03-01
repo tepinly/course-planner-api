@@ -8,6 +8,7 @@ require('dotenv').config()
 const { PORT } = process.env
 
 type Lesson = {
+  user: number
   title: string
   description: string
   recurrence: Array<string>
@@ -31,9 +32,10 @@ function nextDay(d: Date, dow: number){
     return d.getTime() / 1000;
 }
 
-const createLessonRecord = async (title: string, description: string) => {
+const createLessonRecord = async (user: number, title: string, description: string) => {
   const newLesson = await prisma.lesson.create({
     data: {
+      user: user,
       title: title,
       description: description
     }
@@ -66,7 +68,7 @@ app.post('/lesson/create', async (req: any, res: any) => {
   let startDate: number = new Date(lesson.start).getTime() / 1000
   let expDate: number = new Date(lesson.exp ?? lesson.start).getTime() / 1000
   let interval: number
-  const newLesson = await createLessonRecord(lesson.title, lesson.description)
+  const newLesson = await createLessonRecord(lesson.user, lesson.title, lesson.description)
   
   if (lesson.recurrence.length === 0) {
     const newRecurrence = await createRecurrenceRecord(await newLesson.id, interval = 0, startDate, expDate)
@@ -91,6 +93,10 @@ app.post('/lesson/create', async (req: any, res: any) => {
   }
 
   res.send(`Record created 👌`)
+})
+
+app.get(`lesson/fetch`, async (req: any, res: any) => {
+  
 })
 
 app.listen(PORT, () => {

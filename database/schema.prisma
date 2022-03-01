@@ -9,6 +9,7 @@ generator client {
 
 model Lesson {
   id Int @id @default(autoincrement())
+  user Int
   title String
   description String
   recurrence Recurrence[]
