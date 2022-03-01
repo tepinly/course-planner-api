@@ -35,6 +35,31 @@ function nextDay(d: Date, dow: number){
     return d.getTime() / 1000;
 }
 
+async function createRecurrence(lessonId: number, lesson: Lesson, startDate: string, expDate: string) {
+  let interval: number
+  if (lesson.recurrence.length === 0) {
+    const newRecurrence = await queries.createRecurrenceRecord(lessonId, interval = 0, startDate, startDate)
+  }
+
+  else if (lesson.recurrence[0].match('all')) {
+    interval = 24 * 60 * 60
+    const newRecurrence = await queries.createRecurrenceRecord(lessonId, interval, startDate, expDate)
+  }
+ 
+  else {
+    const days: Array<number> = lesson.recurrence.filter((day: string) => day in weekDays).map((day: string) => weekDays[day])
+    interval = 7 * 24 * 60 * 60
+    const temp: Date = new Date(parseInt(startDate) * 1000)
+    const lessonKey = lessonId
+    let start: string
+
+    for (const day of days) {
+      start = String(nextDay(temp, day))
+      const newRecurrence = await queries.createRecurrenceRecord(lessonKey, interval, start, expDate)
+    }
+  }
+}
+
 app.get('/', async (req: any, res: any) => {
   res.send(`received`)
 })
@@ -47,30 +72,8 @@ app.post('/lesson/create', async (req: any, res: any) => {
   const lesson: Lesson = req.body[0]
   let startDate: string = String(new Date(lesson.start).getTime() / 1000)
   let expDate: string = String(new Date(lesson.exp ?? lesson.start).getTime() / 1000)
-  let interval: number
   const newLesson = await queries.createLessonRecord(lesson.user, lesson.title, lesson.description)
-  
-  if (lesson.recurrence.length === 0) {
-    const newRecurrence = await queries.createRecurrenceRecord(await newLesson.id, interval = 0, startDate, startDate)
-  }
-
-  else if (lesson.recurrence[0].match('all')) {
-    interval = 24 * 60 * 60
-    const newRecurrence = await queries.createRecurrenceRecord(await newLesson.id, interval, startDate, expDate)
-  }
-
-  else {
-    const days: Array<number> = lesson.recurrence.filter((day: string) => day in weekDays).map((day: string)  => weekDays[day])
-    interval = 7 * 24 * 60 * 60
-    const temp: Date = new Date(parseInt(startDate) * 1000)
-    const lessonKey = await newLesson.id
-    let start: string
-
-    for (const day of days) {
-      start = String(nextDay(temp, day))
-      const newRecurrence = await queries.createRecurrenceRecord(lessonKey, interval, start, expDate)
-    }
-  }
+  const created = await createRecurrence(await newLesson.id, lesson, startDate, expDate)
 
   res.send(`Record created 👌`)
 })
