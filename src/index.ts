@@ -94,7 +94,10 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
       const interval: number = recurrence.interval
       
       if (interval == 604800) {
-        count = Math.floor( (expire.getDate() - start.getDate()) / 7 )
+        while (start < expire) {
+          count++
+          start.setDate(start.getDate() + 7)
+        }
         weekDay = getKeyByValue(weekDays, (start).getDay())
       }
       else if (interval == 86400) {
