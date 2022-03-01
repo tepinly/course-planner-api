@@ -56,7 +56,7 @@ app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
  * Date is passed as string in format YYYY-MM-DD
  * Recurrence is array of week days
  */
-app.get('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const lesson = req.body[0];
     let startDate = new Date(lesson.start).getTime() / 1000;

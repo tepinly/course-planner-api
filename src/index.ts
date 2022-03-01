@@ -61,7 +61,7 @@ app.get('/', async (req: any, res: any) => {
  * Date is passed as string in format YYYY-MM-DD
  * Recurrence is array of week days
  */
-app.get('/lesson/create', async (req: any, res: any) => {
+app.post('/lesson/create', async (req: any, res: any) => {
   const lesson: Lesson = req.body[0]
   let startDate: number = new Date(lesson.start).getTime() / 1000
   let expDate: number = new Date(lesson.exp ?? lesson.start).getTime() / 1000
