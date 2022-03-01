@@ -54,6 +54,20 @@ const fetchLessons = async (userId: number) => {
   return { recurrences: recurrences, lessons: lessons }
 }
 
+const fetchUniqueLesson = async (lessonId: number) => {
+  const lesson = await prisma.lesson.findUnique({
+    where: {
+      lesson: {
+        equals: lessonId
+      }
+    }
+  })
+
+  let recurrence = await lessonRecurrence(lesson.id)
+
+  return { recurrence: recurrence, lesson: lesson }
+}
+
 module.exports = {
   createLessonRecord: createLessonRecord,
   createRecurrenceRecord: createRecurrenceRecord,
