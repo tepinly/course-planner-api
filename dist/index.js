@@ -52,7 +52,7 @@ app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send(`received`);
 }));
 /**
- * Date is passed as string in format YYYY-MM-DD
+ * Date is passed as string in UTC format
  * Recurrence is array of week days
  */
 app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {

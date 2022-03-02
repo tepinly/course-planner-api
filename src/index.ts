@@ -57,7 +57,7 @@ app.get('/', async (req: any, res: any) => {
 })
 
 /**
- * Date is passed as string in format YYYY-MM-DD
+ * Date is passed as string in UTC format
  * Recurrence is array of week days
  */
 app.post('/lesson/create', async (req: any, res: any) => {
