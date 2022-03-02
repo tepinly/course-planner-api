@@ -103,11 +103,27 @@ app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
     res.send(schedule);
 }));
-app.post('/lesson/update', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.put('/lesson/update', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const request = req.body[0];
-    const lessonId = request.lesson;
-    const weekIndex = request.weekIndex;
-    const lesson = request.newDate;
+    let newTitle = request.hasOwnProperty('title') ? request.newTitle : '';
+    let newDescription = request.hasOwnProperty('description') ? request.newDescription : '';
+    if (newTitle.length > 0 || newDescription.length > 0)
+        yield queries.updateLesson(request.lessonId, newTitle, newDescription);
+    const newDate = request.newDate.getTime() / 1000;
+    if (request.hasOwnProperty('recurrenceId')) {
+        const recurrence = yield queries.fetchUniqueRecurrence(request.recurrenceId);
+        const originalInterval = yield recurrence.interval;
+        if ((yield originalInterval) == 0) {
+            const updateSingleRecurrence = queries.updateSingleRecurrence(request.recurrenceId, newDate);
+            return res.send(`Lesson updated 👌`);
+        }
+        if (request.hasOwnProperty('followUp')) {
+            const updatePatternRecurrence = queries.updatePatternRecurrence(request.recurrenceId, request.index, newDate);
+            return res.send(`Lesson updated 👌`);
+        }
+        const updateSplitRecurrence = queries.updateSplitRecurrence(request.recurrenceId, request.index, newDate);
+        res.send(`Lesson updated 👌`);
+    }
 }));
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);

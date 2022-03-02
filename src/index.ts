@@ -114,12 +114,32 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
   res.send(schedule)
 })
 
-app.post('/lesson/update', async (req: any, res: any) => {
+app.put('/lesson/update', async (req: any, res: any) => {
   const request = req.body[0]
-  const lessonId: number = request.lesson
-  const weekIndex: number = request.weekIndex
-  const lesson:number = request.newDate
 
+  let newTitle: string = request.hasOwnProperty('title')  ? request.newTitle : ''
+  let newDescription: string = request.hasOwnProperty('description')  ? request.newDescription : ''
+  if (newTitle.length > 0 || newDescription.length > 0) await queries.updateLesson(request.lessonId, newTitle, newDescription)
+  const newDate: number = request.newDate.getTime() / 1000
+  
+  if (request.hasOwnProperty('recurrenceId')) {
+    const recurrence = await queries.fetchUniqueRecurrence(request.recurrenceId)
+    const originalInterval = await recurrence.interval
+
+    if (await originalInterval == 0) {
+      const updateSingleRecurrence = queries.updateSingleRecurrence(request.recurrenceId, newDate)
+      return res.send(`Lesson updated 👌`)
+    }
+
+    if (request.hasOwnProperty('followUp')) {
+      const updatePatternRecurrence = queries.updatePatternRecurrence(request.recurrenceId, request.index, newDate)
+      return res.send(`Lesson updated 👌`)
+    }
+
+    const updateSplitRecurrence = queries.updateSplitRecurrence(request.recurrenceId, request.index, newDate)
+
+    res.send(`Lesson updated 👌`)
+  }
 })
 
 app.listen(PORT, () => {
