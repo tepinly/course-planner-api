@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-const createLessonRecord = async (user: number, title: string, description: string) => {
+export const createLessonRecord = async (user: number, title: string, description: string) => {
   const newLesson = await prisma.lesson.create({
     data: {
       user: user,
@@ -12,7 +12,7 @@ const createLessonRecord = async (user: number, title: string, description: stri
   return await newLesson
 }
 
-const createRecurrenceRecord = async (id: number, interval: number, startDate: string, expDate: string) => {
+export const createRecurrenceRecord = async (id: number, interval: number, startDate: string, expDate: string) => {
   const newRecurrence = await prisma.recurrence.create({
     data: {
       lessonId: id,
@@ -24,7 +24,7 @@ const createRecurrenceRecord = async (id: number, interval: number, startDate: s
   return await newRecurrence
 }
 
-const fetchRecurrence = async (lessonId: number) => {
+export const fetchRecurrence = async (lessonId: number) => {
   const recurrence = await prisma.recurrence.findMany({
     where: {
       lessonId: {
@@ -36,7 +36,7 @@ const fetchRecurrence = async (lessonId: number) => {
   return await recurrence
 }
 
-const fetchUniqueRecurrence = async (recurrenceId: number) => {
+export const fetchUniqueRecurrence = async (recurrenceId: number) => {
   const recurrence = await prisma.recurrence.findUnique({
     where: {
       id: {
@@ -48,7 +48,7 @@ const fetchUniqueRecurrence = async (recurrenceId: number) => {
   return await recurrence
 }
 
-const fetchLessons = async (userId: number) => {
+export const fetchLessons = async (userId: number) => {
   const lessons = await prisma.lesson.findMany({
     where: {
       user: {
@@ -66,11 +66,11 @@ const fetchLessons = async (userId: number) => {
   return { recurrences: recurrences, lessons: await lessons }
 }
 
-const fetchUniqueLesson = async (lessonId: number) => {
+export const fetchUniqueLesson = async (lessonId: number) => {
   const lesson = await prisma.lesson.findUnique({
     where: {
       lesson: {
-        equals: lessonId
+        id: lessonId
       }
     }
   })
@@ -80,8 +80,71 @@ const fetchUniqueLesson = async (lessonId: number) => {
   return { recurrence: recurrence, lesson: await lesson }
 }
 
-module.exports = {
-  createLessonRecord: createLessonRecord,
-  createRecurrenceRecord: createRecurrenceRecord,
-  fetchLessons: fetchLessons
-};
+export const updateLesson = async (lessonId: number, newTitle: string, newDescription: string) => {
+  const updatedTitle = newTitle.length == 0 ? '' : await prisma.lesson.findUnique({
+    where: {
+      lesson: {
+        id: lessonId
+      }
+    },
+    data: {
+      title: newTitle
+    }
+  })
+
+  const updatedDescription = newDescription.length == 0 ? '' : await prisma.lesson.findUnique({
+    where: {
+      lesson: {
+        id: lessonId
+      }
+    },
+    data: {
+      title: newDescription
+    }
+  })
+}
+
+export const updateSingleRecurrence = async (recurrenceId: number, newDate: string) => {
+  const updated = await prisma.recurrence.findUnique({
+    where: {
+      recurrence: {
+        id: recurrenceId
+      }
+    },
+    data: {
+      start: newDate,
+      expire: newDate
+    }
+  })
+
+  return await updated
+}
+
+export const updatePatternRecurrence = async (recurrenceId: number, index: number, newDate: number, split: Boolean) => {
+  const recurrence = await queries.fetchUniqueRecurrence(recurrenceId)
+  const interval = await recurrence.interval
+  const expDate = await recurrence.expire
+  const startDate = parseInt(await recurrence.start)
+
+  const indexDate: number = startDate + (interval * index)
+
+  const updated = await prisma.recurrence.findUnique({
+    where: {
+      recurrence: {
+        id: recurrenceId
+      }
+    },
+    data: {
+      expire: String(indexDate - interval)
+    }
+  })
+
+  if (split) {
+    createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate), String(indexDate))
+    createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
+    return await updated
+  }
+
+  createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate), String(expDate))
+  return await updated
+}

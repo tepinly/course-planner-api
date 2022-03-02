@@ -8,6 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.updatePatternRecurrence = exports.updateSingleRecurrence = exports.updateLesson = exports.fetchUniqueLesson = exports.fetchLessons = exports.fetchUniqueRecurrence = exports.fetchRecurrence = exports.createRecurrenceRecord = exports.createLessonRecord = void 0;
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const createLessonRecord = (user, title, description) => __awaiter(void 0, void 0, void 0, function* () {
@@ -18,8 +20,9 @@ const createLessonRecord = (user, title, description) => __awaiter(void 0, void 
             description: description
         }
     });
-    return newLesson;
+    return yield newLesson;
 });
+exports.createLessonRecord = createLessonRecord;
 const createRecurrenceRecord = (id, interval, startDate, expDate) => __awaiter(void 0, void 0, void 0, function* () {
     const newRecurrence = yield prisma.recurrence.create({
         data: {
@@ -29,9 +32,10 @@ const createRecurrenceRecord = (id, interval, startDate, expDate) => __awaiter(v
             expire: expDate
         }
     });
-    return newRecurrence;
+    return yield newRecurrence;
 });
-const lessonRecurrence = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
+exports.createRecurrenceRecord = createRecurrenceRecord;
+const fetchRecurrence = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
     const recurrence = yield prisma.recurrence.findMany({
         where: {
             lessonId: {
@@ -41,6 +45,18 @@ const lessonRecurrence = (lessonId) => __awaiter(void 0, void 0, void 0, functio
     });
     return yield recurrence;
 });
+exports.fetchRecurrence = fetchRecurrence;
+const fetchUniqueRecurrence = (recurrenceId) => __awaiter(void 0, void 0, void 0, function* () {
+    const recurrence = yield prisma.recurrence.findUnique({
+        where: {
+            id: {
+                equals: recurrenceId
+            }
+        }
+    });
+    return yield recurrence;
+});
+exports.fetchUniqueRecurrence = fetchUniqueRecurrence;
 const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const lessons = yield prisma.lesson.findMany({
         where: {
@@ -51,23 +67,83 @@ const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () 
     });
     let recurrences = [];
     for (const lesson of lessons) {
-        recurrences.push(yield lessonRecurrence(lesson.id));
+        recurrences.push(yield (0, exports.fetchRecurrence)(lesson.id));
     }
-    return { recurrences: recurrences, lessons: lessons };
+    return { recurrences: recurrences, lessons: yield lessons };
 });
+exports.fetchLessons = fetchLessons;
 const fetchUniqueLesson = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
     const lesson = yield prisma.lesson.findUnique({
         where: {
             lesson: {
-                equals: lessonId
+                id: lessonId
             }
         }
     });
-    let recurrence = yield lessonRecurrence(lesson.id);
-    return { recurrence: recurrence, lesson: lesson };
+    let recurrence = yield (0, exports.fetchRecurrence)(lesson.id);
+    return { recurrence: recurrence, lesson: yield lesson };
 });
-module.exports = {
-    createLessonRecord: createLessonRecord,
-    createRecurrenceRecord: createRecurrenceRecord,
-    fetchLessons: fetchLessons
-};
+exports.fetchUniqueLesson = fetchUniqueLesson;
+const updateLesson = (lessonId, newTitle, newDescription) => __awaiter(void 0, void 0, void 0, function* () {
+    const updatedTitle = newTitle.length == 0 ? '' : yield prisma.lesson.findUnique({
+        where: {
+            lesson: {
+                id: lessonId
+            }
+        },
+        data: {
+            title: newTitle
+        }
+    });
+    const updatedDescription = newDescription.length == 0 ? '' : yield prisma.lesson.findUnique({
+        where: {
+            lesson: {
+                id: lessonId
+            }
+        },
+        data: {
+            title: newDescription
+        }
+    });
+});
+exports.updateLesson = updateLesson;
+const updateSingleRecurrence = (recurrenceId, newDate) => __awaiter(void 0, void 0, void 0, function* () {
+    const updated = yield prisma.recurrence.findUnique({
+        where: {
+            recurrence: {
+                id: recurrenceId
+            }
+        },
+        data: {
+            start: newDate,
+            expire: newDate
+        }
+    });
+    return yield updated;
+});
+exports.updateSingleRecurrence = updateSingleRecurrence;
+const updatePatternRecurrence = (recurrenceId, index, newDate, split) => __awaiter(void 0, void 0, void 0, function* () {
+    const recurrence = yield queries.fetchUniqueRecurrence(recurrenceId);
+    const interval = yield recurrence.interval;
+    const expDate = yield recurrence.expire;
+    const startDate = parseInt(yield recurrence.start);
+    const indexDate = startDate + (interval * index);
+    const updated = yield prisma.recurrence.findUnique({
+        where: {
+            recurrence: {
+                id: recurrenceId
+            }
+        },
+        data: {
+            expire: String(indexDate - interval)
+        }
+    });
+    if (split) {
+        (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate), String(indexDate));
+        (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate + interval), String(expDate));
+        return yield updated;
+    }
+    (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate), String(expDate));
+    return yield updated;
+});
+exports.updatePatternRecurrence = updatePatternRecurrence;
