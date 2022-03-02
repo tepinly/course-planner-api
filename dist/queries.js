@@ -49,9 +49,7 @@ exports.fetchRecurrence = fetchRecurrence;
 const fetchUniqueRecurrence = (recurrenceId) => __awaiter(void 0, void 0, void 0, function* () {
     const recurrence = yield prisma.recurrence.findUnique({
         where: {
-            id: {
-                equals: recurrenceId
-            }
+            id: recurrenceId
         }
     });
     return yield recurrence;
@@ -85,34 +83,28 @@ const fetchUniqueLesson = (lessonId) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.fetchUniqueLesson = fetchUniqueLesson;
 const updateLesson = (lessonId, newTitle, newDescription) => __awaiter(void 0, void 0, void 0, function* () {
-    const updatedTitle = newTitle.length == 0 ? '' : yield prisma.lesson.findUnique({
+    const updatedTitle = newTitle.length == 0 ? '' : yield prisma.lesson.update({
         where: {
-            lesson: {
-                id: lessonId
-            }
+            id: lessonId
         },
         data: {
             title: newTitle
         }
     });
-    const updatedDescription = newDescription.length == 0 ? '' : yield prisma.lesson.findUnique({
+    const updatedDescription = newDescription.length == 0 ? '' : yield prisma.lesson.update({
         where: {
-            lesson: {
-                id: lessonId
-            }
+            id: lessonId
         },
         data: {
-            title: newDescription
+            description: newDescription
         }
     });
 });
 exports.updateLesson = updateLesson;
 const updateSingleRecurrence = (recurrenceId, newDate) => __awaiter(void 0, void 0, void 0, function* () {
-    const updated = yield prisma.recurrence.findUnique({
+    const updated = yield prisma.recurrence.update({
         where: {
-            recurrence: {
-                id: recurrenceId
-            }
+            id: recurrenceId
         },
         data: {
             start: newDate,
@@ -122,28 +114,26 @@ const updateSingleRecurrence = (recurrenceId, newDate) => __awaiter(void 0, void
     return yield updated;
 });
 exports.updateSingleRecurrence = updateSingleRecurrence;
-const updatePatternRecurrence = (recurrenceId, index, newDate, split) => __awaiter(void 0, void 0, void 0, function* () {
-    const recurrence = yield queries.fetchUniqueRecurrence(recurrenceId);
+const updatePatternRecurrence = (recurrenceId, index, newDate, followUp) => __awaiter(void 0, void 0, void 0, function* () {
+    const recurrence = yield (0, exports.fetchUniqueRecurrence)(recurrenceId);
     const interval = yield recurrence.interval;
     const expDate = yield recurrence.expire;
     const startDate = parseInt(yield recurrence.start);
-    const indexDate = startDate + (interval * index);
-    const updated = yield prisma.recurrence.findUnique({
+    const indexDate = startDate + ((yield interval) * index);
+    const updated = yield prisma.recurrence.update({
         where: {
-            recurrence: {
-                id: recurrenceId
-            }
+            id: recurrenceId
         },
         data: {
-            expire: String(indexDate - interval)
+            expire: String(indexDate - (yield interval))
         }
     });
-    if (split) {
-        (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate), String(indexDate));
+    if (!followUp) {
+        (0, exports.createRecurrenceRecord)(recurrence.lessonId, 0, String(newDate), String(newDate));
         (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate + interval), String(expDate));
         return yield updated;
     }
-    (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate), String(expDate));
+    (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(newDate), String(expDate));
     return yield updated;
 });
 exports.updatePatternRecurrence = updatePatternRecurrence;

@@ -39,9 +39,7 @@ export const fetchRecurrence = async (lessonId: number) => {
 export const fetchUniqueRecurrence = async (recurrenceId: number) => {
   const recurrence = await prisma.recurrence.findUnique({
     where: {
-      id: {
-        equals: recurrenceId
-      }
+      id: recurrenceId
     }
   })
 
@@ -81,35 +79,29 @@ export const fetchUniqueLesson = async (lessonId: number) => {
 }
 
 export const updateLesson = async (lessonId: number, newTitle: string, newDescription: string) => {
-  const updatedTitle = newTitle.length == 0 ? '' : await prisma.lesson.findUnique({
+  const updatedTitle = newTitle.length == 0 ? '' : await prisma.lesson.update({
     where: {
-      lesson: {
-        id: lessonId
-      }
+      id: lessonId
     },
     data: {
       title: newTitle
     }
   })
 
-  const updatedDescription = newDescription.length == 0 ? '' : await prisma.lesson.findUnique({
+  const updatedDescription = newDescription.length == 0 ? '' : await prisma.lesson.update({
     where: {
-      lesson: {
-        id: lessonId
-      }
+      id: lessonId
     },
     data: {
-      title: newDescription
+      description: newDescription
     }
   })
 }
 
 export const updateSingleRecurrence = async (recurrenceId: number, newDate: string) => {
-  const updated = await prisma.recurrence.findUnique({
+  const updated = await prisma.recurrence.update({
     where: {
-      recurrence: {
-        id: recurrenceId
-      }
+     id: recurrenceId
     },
     data: {
       start: newDate,
@@ -120,31 +112,29 @@ export const updateSingleRecurrence = async (recurrenceId: number, newDate: stri
   return await updated
 }
 
-export const updatePatternRecurrence = async (recurrenceId: number, index: number, newDate: number, split: Boolean) => {
-  const recurrence = await queries.fetchUniqueRecurrence(recurrenceId)
+export const updatePatternRecurrence = async (recurrenceId: number, index: number, newDate: number, followUp: Boolean) => {
+  const recurrence = await fetchUniqueRecurrence(recurrenceId)
   const interval = await recurrence.interval
   const expDate = await recurrence.expire
   const startDate = parseInt(await recurrence.start)
 
-  const indexDate: number = startDate + (interval * index)
+  const indexDate: number = startDate + (await interval * index)
 
-  const updated = await prisma.recurrence.findUnique({
+  const updated = await prisma.recurrence.update({
     where: {
-      recurrence: {
-        id: recurrenceId
-      }
+      id: recurrenceId
     },
     data: {
-      expire: String(indexDate - interval)
+      expire: String(indexDate - await interval)
     }
   })
 
-  if (split) {
-    createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate), String(indexDate))
+  if (!followUp) {
+    createRecurrenceRecord(recurrence.lessonId, 0, String(newDate), String(newDate))
     createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
     return await updated
   }
 
-  createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate), String(expDate))
+  createRecurrenceRecord(recurrence.lessonId, interval, String(newDate), String(expDate))
   return await updated
 }
