@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updatePatternRecurrence = exports.updateSingleRecurrence = exports.updateLesson = exports.fetchUniqueLesson = exports.fetchLessons = exports.fetchUniqueRecurrence = exports.fetchRecurrence = exports.createRecurrenceRecord = exports.createLessonRecord = void 0;
+exports.deletePatternRecurrence = exports.deleteSingleRecurrence = exports.deleteLesson = exports.updatePatternRecurrence = exports.updateSingleRecurrence = exports.updateLesson = exports.fetchUniqueLesson = exports.fetchLessons = exports.fetchUniqueRecurrence = exports.fetchRecurrence = exports.createRecurrenceRecord = exports.createLessonRecord = void 0;
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const createLessonRecord = (user, title, description) => __awaiter(void 0, void 0, void 0, function* () {
@@ -38,9 +38,7 @@ exports.createRecurrenceRecord = createRecurrenceRecord;
 const fetchRecurrence = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
     const recurrence = yield prisma.recurrence.findMany({
         where: {
-            lessonId: {
-                equals: lessonId
-            }
+            lessonId: lessonId
         }
     });
     return yield recurrence;
@@ -58,9 +56,7 @@ exports.fetchUniqueRecurrence = fetchUniqueRecurrence;
 const fetchLessons = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const lessons = yield prisma.lesson.findMany({
         where: {
-            user: {
-                equals: userId
-            }
+            user: userId
         }
     });
     let recurrences = [];
@@ -73,9 +69,7 @@ exports.fetchLessons = fetchLessons;
 const fetchUniqueLesson = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
     const lesson = yield prisma.lesson.findUnique({
         where: {
-            lesson: {
-                id: lessonId
-            }
+            id: lessonId
         }
     });
     let recurrence = yield (0, exports.fetchRecurrence)(lesson.id);
@@ -129,11 +123,58 @@ const updatePatternRecurrence = (recurrenceId, index, newDate, followUp) => __aw
         }
     });
     if (!followUp) {
-        (0, exports.createRecurrenceRecord)(recurrence.lessonId, 0, String(newDate), String(newDate));
-        (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate + interval), String(expDate));
+        yield (0, exports.createRecurrenceRecord)(recurrence.lessonId, 0, String(newDate), String(newDate));
+        yield (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate + interval), String(expDate));
         return yield updated;
     }
     (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(newDate), String(expDate));
     return yield updated;
 });
 exports.updatePatternRecurrence = updatePatternRecurrence;
+const deleteLesson = (lessonId) => __awaiter(void 0, void 0, void 0, function* () {
+    const deleteRecurrence = prisma.recurrence.deleteMany({
+        where: {
+            lessonId: lessonId
+        }
+    });
+    const deleteLesson = prisma.lesson.delete({
+        where: {
+            id: lessonId
+        }
+    });
+    return yield prisma.$transaction([deleteRecurrence, deleteLesson]);
+});
+exports.deleteLesson = deleteLesson;
+const deleteSingleRecurrence = (recurrenceId) => __awaiter(void 0, void 0, void 0, function* () {
+    const deleteRecurrence = yield prisma.recurrence.delete({
+        where: {
+            id: recurrenceId
+        }
+    });
+    return yield deleteRecurrence;
+});
+exports.deleteSingleRecurrence = deleteSingleRecurrence;
+const deletePatternRecurrence = (recurrenceId, index, followUp) => __awaiter(void 0, void 0, void 0, function* () {
+    const recurrence = yield (0, exports.fetchUniqueRecurrence)(recurrenceId);
+    const interval = yield recurrence.interval;
+    const expDate = yield recurrence.expire;
+    const startDate = parseInt(yield recurrence.start);
+    const indexDate = startDate + ((yield interval) * index);
+    const updated = yield prisma.recurrence.update({
+        where: {
+            id: recurrenceId
+        },
+        data: {
+            expire: String(indexDate - (yield interval))
+        }
+    });
+    const deleteRecurrence = yield prisma.recurrence.delete({
+        where: {
+            id: recurrenceId
+        }
+    });
+    if (!followUp)
+        yield (0, exports.createRecurrenceRecord)(recurrence.lessonId, interval, String(indexDate + interval), String(expDate));
+    return yield deleteRecurrence;
+});
+exports.deletePatternRecurrence = deletePatternRecurrence;
