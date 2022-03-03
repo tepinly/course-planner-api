@@ -67,7 +67,7 @@ export const fetchUniqueLesson = async (lessonId: number) => {
     }
   })
 
-  let recurrence = await fetchRecurrence(lesson.id)
+  const recurrence = await fetchRecurrence(lesson.id)
 
   return { recurrence: recurrence, lesson: await lesson }
 }
@@ -108,28 +108,28 @@ export const updateSingleRecurrence = async (recurrenceId: number, newDate: stri
 
 export const updatePatternRecurrence = async (recurrenceId: number, index: number, newDate: number, followUp: Boolean) => {
   const recurrence = await fetchUniqueRecurrence(recurrenceId)
-  const interval = await recurrence.interval
+  const interval = await recurrence.interval * (index - 1)
   const expDate = await recurrence.expire
   const startDate = parseInt(await recurrence.start)
 
-  const indexDate: number = startDate + (await interval * index)
+  const indexDate: number = startDate + interval
 
   const updated = await prisma.recurrence.update({
     where: {
       id: recurrenceId
     },
     data: {
-      expire: String(indexDate - await interval)
+      expire: String(indexDate - interval)
     }
   })
 
   if (!followUp && indexDate + interval <= parseInt(expDate)) {
-    await createRecurrenceRecord(recurrence.lessonId, 0, String(newDate), String(newDate))
-    await createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
+    await createRecurrenceRecord(await recurrence.lessonId, 0, String(newDate), String(newDate))
+    await createRecurrenceRecord(await recurrence.lessonId, interval, String(indexDate + interval), await expDate)
     return await updated
   }
 
-  createRecurrenceRecord(recurrence.lessonId, interval, String(newDate), String(expDate))
+  createRecurrenceRecord(await recurrence.lessonId, interval, String(newDate), await expDate)
   return await updated
 }
 
@@ -171,24 +171,25 @@ export const deletePatternRecurrence = async (recurrenceId: number, index: numbe
   const expDate = await recurrence.expire
   const startDate = parseInt(await recurrence.start)
 
-  const indexDate: number = startDate + (await interval * index)
-
-  const updated = await prisma.recurrence.update({
-    where: {
-      id: recurrenceId
-    },
-    data: {
-      expire: String(indexDate - await interval)
-    }
-  })
+  const indexDate: number = startDate + (interval * (index - 1))
   
-  if (!followUp && (indexDate + interval) <= parseInt(expDate)) return await createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
+  if (indexDate - interval >= startDate) {
+    const updated = await prisma.recurrence.update({
+      where: {
+        id: recurrenceId
+      },
+      data: {
+        expire: String(indexDate - interval)
+      }
+    })
+  }
+  else {
+    const deleted = await prisma.recurrence.delete({
+      where: {
+        id: recurrenceId
+      }
+    })
+  }
   
-  const deleteRecurrence = await prisma.recurrence.delete({
-    where: {
-      id: recurrenceId
-    }
-  })
-
-  return await deleteRecurrence
+  if (!followUp && (indexDate + interval) <= parseInt(expDate)) return await createRecurrenceRecord(await recurrence.lessonId, interval, String(indexDate + interval), expDate)
 }

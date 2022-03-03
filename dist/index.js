@@ -28,23 +28,17 @@ const weekDays = {
 function createRecurrence(lessonId, lesson, startDate, expDate) {
     return __awaiter(this, void 0, void 0, function* () {
         let interval;
-        if (lesson.recurrence.length === 0) {
-            const newRecurrence = yield queries.createRecurrenceRecord(lessonId, interval = 0, startDate, startDate);
-        }
-        else if (lesson.recurrence[0].match('all')) {
-            interval = 24 * 60 * 60;
-            const newRecurrence = yield queries.createRecurrenceRecord(lessonId, interval, startDate, expDate);
-        }
-        else {
-            const days = lesson.recurrence.filter((day) => day in weekDays).map((day) => weekDays[day]);
-            interval = 7 * 24 * 60 * 60;
-            const temp = new Date(parseInt(startDate) * 1000);
-            const lessonKey = lessonId;
-            let start;
-            for (const day of days) {
-                start = String(helper.nextDay(temp, day));
-                const newRecurrence = yield queries.createRecurrenceRecord(lessonKey, interval, start, expDate);
-            }
+        if (!lesson.hasOwnProperty('recurrence'))
+            return yield queries.createRecurrenceRecord(lessonId, interval = 0, startDate, startDate);
+        if (lesson.recurrence[0].match('all'))
+            return yield queries.createRecurrenceRecord(lessonId, interval = 24 * 60 * 60, startDate, expDate);
+        const days = lesson.recurrence.filter((day) => day in weekDays).map((day) => weekDays[day]);
+        const temp = new Date(parseInt(startDate) * 1000);
+        const lessonKey = lessonId;
+        let start;
+        for (const day of days) {
+            start = String(helper.nextDay(temp, day));
+            yield queries.createRecurrenceRecord(lessonKey, interval = 7 * 24 * 60 * 60, start, expDate);
         }
     });
 }
@@ -56,12 +50,11 @@ app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
  * Recurrence is array of week days
  */
 app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     const lesson = req.body[0];
     let startDate = String(new Date(lesson.start).getTime() / 1000);
-    let expDate = String(new Date((_a = lesson.exp) !== null && _a !== void 0 ? _a : lesson.start).getTime() / 1000);
+    let expDate = String(new Date(lesson.exp ? lesson.exp : lesson.start).getTime() / 1000);
     const newLesson = yield queries.createLessonRecord(lesson.user, lesson.title, lesson.description);
-    yield queries.createRecurrence(yield newLesson.id, lesson, startDate, expDate);
+    yield createRecurrence(yield newLesson.id, lesson, startDate, expDate);
     res.send(`Record created 👌`);
 }));
 app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -129,10 +122,12 @@ app.delete('/lesson/delete', (req, res) => __awaiter(void 0, void 0, void 0, fun
     const originalInterval = yield recurrence.interval;
     if ((yield originalInterval) == 0) {
         yield queries.deleteSingleRecurrence(request.recurrenceId);
+        res.send(`Recurrence deleted 🚮`);
     }
-    yield queries.deletePatternRecurrence(request.recurrenceId, request.hasOwnProperty('index') ? request.index : 0, request.hasOwnProperty('followUp') ? true : false);
+    else
+        yield queries.deletePatternRecurrence(request.recurrenceId, request.hasOwnProperty('index') ? request.index : 0, request.hasOwnProperty('followUp') ? true : false);
     const lesson = yield queries.fetchUniqueLesson(lessonId);
-    if (lesson.recurrences.length == 0)
+    if (lesson.recurrence.length == 0)
         yield queries.deleteLesson(lessonId);
     res.send(`Recurrence deleted 🚮`);
 }));

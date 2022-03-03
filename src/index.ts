@@ -29,26 +29,18 @@ const weekDays: { [index: string]: number } = {
 
 async function createRecurrence(lessonId: number, lesson: Lesson, startDate: string, expDate: string) {
   let interval: number
-  if (lesson.recurrence.length === 0) {
-    const newRecurrence = await queries.createRecurrenceRecord(lessonId, interval = 0, startDate, startDate)
-  }
 
-  else if (lesson.recurrence[0].match('all')) {
-    interval = 24 * 60 * 60
-    const newRecurrence = await queries.createRecurrenceRecord(lessonId, interval, startDate, expDate)
-  }
- 
-  else {
-    const days: Array<number> = lesson.recurrence.filter((day: string) => day in weekDays).map((day: string) => weekDays[day])
-    interval = 7 * 24 * 60 * 60
-    const temp: Date = new Date(parseInt(startDate) * 1000)
-    const lessonKey = lessonId
-    let start: string
+  if (!lesson.hasOwnProperty('recurrence')) return await queries.createRecurrenceRecord(lessonId, interval = 0, startDate, startDate)
+  if (lesson.recurrence[0].match('all')) return await queries.createRecurrenceRecord(lessonId, interval = 24 * 60 * 60, startDate, expDate)
 
-    for (const day of days) {
-      start = String(helper.nextDay(temp, day))
-      const newRecurrence = await queries.createRecurrenceRecord(lessonKey, interval, start, expDate)
-    }
+  const days: Array<number> = lesson.recurrence.filter((day: string) => day in weekDays).map((day: string) => weekDays[day])
+  const temp: Date = new Date(parseInt(startDate) * 1000)
+  const lessonKey = lessonId
+  let start: string
+
+  for (const day of days) {
+    start = String(helper.nextDay(temp, day))
+    await queries.createRecurrenceRecord(lessonKey, interval = 7 * 24 * 60 * 60, start, expDate)
   }
 }
 
@@ -62,10 +54,11 @@ app.get('/', async (req: any, res: any) => {
  */
 app.post('/lesson/create', async (req: any, res: any) => {
   const lesson: Lesson = req.body[0]
+
   let startDate: string = String(new Date(lesson.start).getTime() / 1000)
-  let expDate: string = String(new Date(lesson.exp ?? lesson.start).getTime() / 1000)
+  let expDate: string = String(new Date(lesson.exp ? lesson.exp : lesson.start).getTime() / 1000)
   const newLesson = await queries.createLessonRecord(lesson.user, lesson.title, lesson.description)
-  await queries.createRecurrence(await newLesson.id, lesson, startDate, expDate)
+  await createRecurrence(await newLesson.id, lesson, startDate, expDate)
 
   res.send(`Record created 👌`)
 })
@@ -148,12 +141,12 @@ app.delete('/lesson/delete', async (req: any, res: any) => {
 
   if (await originalInterval == 0) {
     await queries.deleteSingleRecurrence(request.recurrenceId)
+    res.send(`Recurrence deleted 🚮`)
   }
-  
-  await queries.deletePatternRecurrence(request.recurrenceId, request.hasOwnProperty('index') ? request.index : 0, request.hasOwnProperty('followUp') ? true : false)
+  else await queries.deletePatternRecurrence(request.recurrenceId, request.hasOwnProperty('index') ? request.index : 0, request.hasOwnProperty('followUp') ? true : false)
 
   const lesson = await queries.fetchUniqueLesson(lessonId)
-  if (lesson.recurrences.length == 0) await queries.deleteLesson(lessonId)
+  if (lesson.recurrence.length == 0) await queries.deleteLesson(lessonId)
 
   res.send(`Recurrence deleted 🚮`)
 })
