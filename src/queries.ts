@@ -123,7 +123,7 @@ export const updatePatternRecurrence = async (recurrenceId: number, index: numbe
     }
   })
 
-  if (!followUp) {
+  if (!followUp && indexDate + interval <= parseInt(expDate)) {
     await createRecurrenceRecord(recurrence.lessonId, 0, String(newDate), String(newDate))
     await createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
     return await updated
@@ -160,6 +160,12 @@ export const deleteSingleRecurrence = async (recurrenceId: number) => {
 }
 
 export const deletePatternRecurrence = async (recurrenceId: number, index: number, followUp: Boolean) => {
+  if (index == 0) return await prisma.recurrence.delete({
+    where: {
+      id: recurrenceId
+    }
+  })
+
   const recurrence = await fetchUniqueRecurrence(recurrenceId)
   const interval = await recurrence.interval
   const expDate = await recurrence.expire
@@ -175,14 +181,14 @@ export const deletePatternRecurrence = async (recurrenceId: number, index: numbe
       expire: String(indexDate - await interval)
     }
   })
-
+  
+  if (!followUp && (indexDate + interval) <= parseInt(expDate)) return await createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
+  
   const deleteRecurrence = await prisma.recurrence.delete({
     where: {
       id: recurrenceId
     }
   })
-
-  if (!followUp) await createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
 
   return await deleteRecurrence
 }

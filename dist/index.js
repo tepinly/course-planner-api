@@ -84,7 +84,7 @@ app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, functio
                 weekDay = helper.getKeyByValue(weekDays, (start).getDay());
             }
             else if (interval == 86400) {
-                count = expire.getDate() - start.getDate();
+                count = expire.getDate() - start.getDate() + 1;
                 weekDay = 'daily';
             }
             else {
@@ -125,11 +125,16 @@ app.delete('/lesson/delete', (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.send(`Lesson deleted 🚮`);
     }
     const recurrence = yield queries.fetchUniqueRecurrence(request.recurrenceId);
+    const lessonId = yield recurrence.lessonId;
     const originalInterval = yield recurrence.interval;
     if ((yield originalInterval) == 0) {
         yield queries.deleteSingleRecurrence(request.recurrenceId);
     }
-    yield queries.deletePatternRecurrence(request.recurrenceId, request.index, request.hasOwnProperty('followUp') ? true : false);
+    yield queries.deletePatternRecurrence(request.recurrenceId, request.hasOwnProperty('index') ? request.index : 0, request.hasOwnProperty('followUp') ? true : false);
+    const lesson = yield queries.fetchUniqueLesson(lessonId);
+    if (lesson.recurrences.length == 0)
+        yield queries.deleteLesson(lessonId);
+    res.send(`Recurrence deleted 🚮`);
 }));
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);

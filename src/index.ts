@@ -93,7 +93,7 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
         weekDay = helper.getKeyByValue(weekDays, (start).getDay())
       }
       else if (interval == 86400) {
-        count = expire.getDate() - start.getDate()
+        count = expire.getDate() - start.getDate() + 1
         weekDay = 'daily'
       }
       else {
@@ -143,13 +143,19 @@ app.delete('/lesson/delete', async (req: any, res: any) => {
   }
 
   const recurrence = await queries.fetchUniqueRecurrence(request.recurrenceId)
+  const lessonId = await recurrence.lessonId
   const originalInterval = await recurrence.interval
 
   if (await originalInterval == 0) {
     await queries.deleteSingleRecurrence(request.recurrenceId)
   }
   
-  await queries.deletePatternRecurrence(request.recurrenceId, request.index, request.hasOwnProperty('followUp') ? true : false)
+  await queries.deletePatternRecurrence(request.recurrenceId, request.hasOwnProperty('index') ? request.index : 0, request.hasOwnProperty('followUp') ? true : false)
+
+  const lesson = await queries.fetchUniqueLesson(lessonId)
+  if (lesson.recurrences.length == 0) await queries.deleteLesson(lessonId)
+
+  res.send(`Recurrence deleted 🚮`)
 })
 
 app.listen(PORT, () => {
