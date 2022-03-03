@@ -61,7 +61,7 @@ app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, funct
     let startDate = String(new Date(lesson.start).getTime() / 1000);
     let expDate = String(new Date((_a = lesson.exp) !== null && _a !== void 0 ? _a : lesson.start).getTime() / 1000);
     const newLesson = yield queries.createLessonRecord(lesson.user, lesson.title, lesson.description);
-    const created = yield queries.createRecurrence(yield newLesson.id, lesson, startDate, expDate);
+    yield queries.createRecurrence(yield newLesson.id, lesson, startDate, expDate);
     res.send(`Record created 👌`);
 }));
 app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -80,10 +80,7 @@ app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, functio
             const expire = new Date(parseInt(recurrence.expire) * 1000);
             const interval = recurrence.interval;
             if (interval == 604800) {
-                while (start < expire) {
-                    count++;
-                    start.setDate(start.getDate() + 7);
-                }
+                count = Math.floor((expire.getDate() - start.getDate()) / 7) + 1;
                 weekDay = helper.getKeyByValue(weekDays, (start).getDay());
             }
             else if (interval == 86400) {
@@ -114,12 +111,25 @@ app.put('/lesson/update', (req, res) => __awaiter(void 0, void 0, void 0, functi
         const recurrence = yield queries.fetchUniqueRecurrence(request.recurrenceId);
         const originalInterval = yield recurrence.interval;
         if ((yield originalInterval) == 0) {
-            const updateSingleRecurrence = queries.updateSingleRecurrence(request.recurrenceId, newDate);
+            yield queries.updateSingleRecurrence(request.recurrenceId, newDate);
             return res.send(`Lesson updated 👌`);
         }
-        const updatePatternRecurrence = queries.updatePatternRecurrence(request.recurrenceId, request.index, newDate, request.hasOwnProperty('followUp') ? true : false);
+        yield queries.updatePatternRecurrence(request.recurrenceId, request.index, newDate, request.hasOwnProperty('followUp') ? true : false);
     }
     res.send(`Lesson updated 👌`);
+}));
+app.delete('/lesson/delete', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const request = req.body[0];
+    if (request.hasOwnProperty('lessonId')) {
+        yield queries.deleteLesson(request.lessonId);
+        return res.send(`Lesson deleted 🚮`);
+    }
+    const recurrence = yield queries.fetchUniqueRecurrence(request.recurrenceId);
+    const originalInterval = yield recurrence.interval;
+    if ((yield originalInterval) == 0) {
+        yield queries.deleteSingleRecurrence(request.recurrenceId);
+    }
+    yield queries.deletePatternRecurrence(request.recurrenceId, request.index, request.hasOwnProperty('followUp') ? true : false);
 }));
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);

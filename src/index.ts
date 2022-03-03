@@ -65,7 +65,7 @@ app.post('/lesson/create', async (req: any, res: any) => {
   let startDate: string = String(new Date(lesson.start).getTime() / 1000)
   let expDate: string = String(new Date(lesson.exp ?? lesson.start).getTime() / 1000)
   const newLesson = await queries.createLessonRecord(lesson.user, lesson.title, lesson.description)
-  const created = await queries.createRecurrence(await newLesson.id, lesson, startDate, expDate)
+  await queries.createRecurrence(await newLesson.id, lesson, startDate, expDate)
 
   res.send(`Record created 👌`)
 })
@@ -124,14 +124,32 @@ app.put('/lesson/update', async (req: any, res: any) => {
     const originalInterval = await recurrence.interval
 
     if (await originalInterval == 0) {
-      const updateSingleRecurrence = queries.updateSingleRecurrence(request.recurrenceId, newDate)
+      await queries.updateSingleRecurrence(request.recurrenceId, newDate)
       return res.send(`Lesson updated 👌`)
     }
 
-    const updatePatternRecurrence = queries.updatePatternRecurrence(request.recurrenceId, request.index, newDate, request.hasOwnProperty('followUp') ? true : false)
+    await queries.updatePatternRecurrence(request.recurrenceId, request.index, newDate, request.hasOwnProperty('followUp') ? true : false)
   }
 
   res.send(`Lesson updated 👌`)
+})
+
+app.delete('/lesson/delete', async (req: any, res: any) => {
+  const request = req.body[0]
+  
+  if (request.hasOwnProperty('lessonId')) {
+    await queries.deleteLesson(request.lessonId)
+    return res.send(`Lesson deleted 🚮`)
+  }
+
+  const recurrence = await queries.fetchUniqueRecurrence(request.recurrenceId)
+  const originalInterval = await recurrence.interval
+
+  if (await originalInterval == 0) {
+    await queries.deleteSingleRecurrence(request.recurrenceId)
+  }
+  
+  await queries.deletePatternRecurrence(request.recurrenceId, request.index, request.hasOwnProperty('followUp') ? true : false)
 })
 
 app.listen(PORT, () => {
