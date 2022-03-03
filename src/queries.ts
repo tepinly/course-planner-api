@@ -126,8 +126,8 @@ export const updatePatternRecurrence = async (recurrenceId: number, index: numbe
   })
 
   if (!followUp) {
-    createRecurrenceRecord(recurrence.lessonId, 0, String(newDate), String(newDate))
-    createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
+    await createRecurrenceRecord(recurrence.lessonId, 0, String(newDate), String(newDate))
+    await createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
     return await updated
   }
 
