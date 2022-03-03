@@ -63,9 +63,7 @@ export const fetchLessons = async (userId: number) => {
 export const fetchUniqueLesson = async (lessonId: number) => {
   const lesson = await prisma.lesson.findUnique({
     where: {
-      lesson: {
       id: lessonId
-    }
     }
   })
 
@@ -133,4 +131,58 @@ export const updatePatternRecurrence = async (recurrenceId: number, index: numbe
 
   createRecurrenceRecord(recurrence.lessonId, interval, String(newDate), String(expDate))
   return await updated
+}
+
+export const deleteLesson = async (lessonId: number) => {
+  const deleteRecurrence = prisma.recurrence.deleteMany ({
+    where: {
+      lessonId : lessonId
+    }
+  })
+
+  const deleteLesson = prisma.lesson.delete({
+    where: {
+      id: lessonId
+    }
+  })
+
+  return await prisma.$transaction([deleteRecurrence, deleteLesson])
+}
+
+export const deleteSingleRecurrence = async (recurrenceId: number) => {
+  const deleteRecurrence = await prisma.recurrence.delete({
+    where: {
+      id: recurrenceId
+    }
+  })
+
+  return await deleteRecurrence
+}
+
+export const deletePatternRecurrence = async (recurrenceId: number, index: number, followUp: Boolean) => {
+  const recurrence = await fetchUniqueRecurrence(recurrenceId)
+  const interval = await recurrence.interval
+  const expDate = await recurrence.expire
+  const startDate = parseInt(await recurrence.start)
+
+  const indexDate: number = startDate + (await interval * index)
+
+  const updated = await prisma.recurrence.update({
+    where: {
+      id: recurrenceId
+    },
+    data: {
+      expire: String(indexDate - await interval)
+    }
+  })
+
+  const deleteRecurrence = await prisma.recurrence.delete({
+    where: {
+      id: recurrenceId
+    }
+  })
+
+  if (!followUp) await createRecurrenceRecord(recurrence.lessonId, interval, String(indexDate + interval), String(expDate))
+
+  return await deleteRecurrence
 }
