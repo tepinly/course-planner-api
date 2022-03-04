@@ -29,8 +29,6 @@
 The API is created in Express.js (TypeScript), with connection to MySQL DB via [Prisma ORM](https://www.prisma.io/) to provide easier syntax reading & modification. \
 JWT demo is installed as middleware for security.
 
----
-
 &nbsp;
 
 ## API Routes
@@ -40,6 +38,8 @@ JWT demo is installed as middleware for security.
 `POST` - `/generateToken`
 
 Generate temporary web tokens to access other requests.
+
+&nbsp;
 
 `POST` - `/lesson/create`
 
@@ -56,6 +56,8 @@ json body: {
 
 Pass body with included properties to create a new lesson. Recurrence is optional with the following arguments: [**sun**, **mon**, **tue**, **wed**, **thu**, **fri**, **sat**, **all** (*for daily recurrence*)]
 
+&nbsp;
+
 `GET` - `/lesson/fetch`
 
 ```js
@@ -65,6 +67,8 @@ json body: {
 ```
 
 Fetch all the user's scheduled lessons with each of their recurrence patterns
+
+&nbsp;
 
 `PUT` - `/lesson/update`
 
@@ -86,6 +90,8 @@ json body: {
 ```
 
 Update lesson's title, description, or reschedule it accordingly. whether it is a single event or a recurring one, you can pick the lesson & update it individually or all its following events in the pattern.
+
+&nbsp;
 
 `DELETE` - `/lesson/delete`
 
