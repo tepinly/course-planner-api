@@ -22,8 +22,6 @@
 - **Delete a lesson**
 : Whether a whole lesson course or a single recurrence, you may delete the specified event and optionally all the following events ahead of it as well.
 
----
-
 &nbsp;
 
 ## Tech invloved
@@ -39,13 +37,11 @@ JWT demo is installed as middleware for security.
 
 &nbsp;
 
-### `POST` - `/generateToken`
+`POST` - `/generateToken`
 
 Generate temporary web tokens to access other requests.
 
-&nbsp;
-
-### `POST` - `/lesson/create`
+`POST` - `/lesson/create`
 
 ```js
 // Date format = UTC string "YYYY:MM:DDTHH:MM:SSZ"
@@ -60,9 +56,7 @@ json body: {
 
 Pass body with included properties to create a new lesson. Recurrence is optional with the following arguments: [**sun**, **mon**, **tue**, **wed**, **thu**, **fri**, **sat**, **all** (*for daily recurrence*)]
 
-&nbsp;
-
-### `GET` - `/lesson/fetch`
+`GET` - `/lesson/fetch`
 
 ```js
 json body: { 
@@ -72,9 +66,7 @@ json body: {
 
 Fetch all the user's scheduled lessons with each of their recurrence patterns
 
-&nbsp;
-
-### `PUT` - `/lesson/update`
+`PUT` - `/lesson/update`
 
 ```js
 json body: { 
@@ -95,9 +87,7 @@ json body: {
 
 Update lesson's title, description, or reschedule it accordingly. whether it is a single event or a recurring one, you can pick the lesson & update it individually or all its following events in the pattern.
 
-&nbsp;
-
-### `DELETE` - `/lesson/delete`
+`DELETE` - `/lesson/delete`
 
 ```js
 /* Delete whole lesson course */
@@ -114,8 +104,6 @@ json body: {
 ```
 
 Delete a whole lesson, whole recurrence or part of a recurrence.
-
----
 
 &nbsp;
 
