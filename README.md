@@ -116,7 +116,7 @@ Delete a whole lesson, whole recurrence or part of a recurrence.
 ## Resolved issues
 
 - [x] Exact time setting
-- [ ] Each weekday is separate in recurrence - more db records & query complexity of O^2
+- [ ] Each weekday is separate in recurrence - more db records & query complexity of (*O<sup>2</sup>*)
 - [ ] Error handling
 - [x] Delete lesson when it has no recurrences
 - [ ] Expried lessons will still appear in the fetch request
