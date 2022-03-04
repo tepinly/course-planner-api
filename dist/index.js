@@ -66,10 +66,6 @@ app.post('/generateToken', (req, res) => {
     const token = generateAccessToken({ username: req.body.username });
     res.json(token);
 });
-/**
- * Date is passed as string in UTC format
- * Recurrence is array of week days
- */
 app.post('/lesson/create', authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const lesson = req.body[0];
     let startDate = String(new Date(lesson.start).getTime() / 1000);
