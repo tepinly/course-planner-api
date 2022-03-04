@@ -3,9 +3,10 @@ const app = express()
 app.use(express.json())
 const queries = require('./queries')
 const helper = require('./helper')
+const jwt = require('jsonwebtoken')
 
 require('dotenv').config()
-const { PORT } = process.env
+const { PORT, TOKEN_SECRET } = process.env
 
 type Lesson = {
   user: number
@@ -44,15 +45,41 @@ async function createRecurrence(lessonId: number, lesson: Lesson, startDate: str
   }
 }
 
+function generateAccessToken(username: any) {
+  return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: '1800s' });
+}
+
+function authenticateToken(req: any, res: any, next: any) {
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+
+  if (token == null) return res.sendStatus(401)
+
+  jwt.verify(token, TOKEN_SECRET as string, (err: any, user: any) => {
+    console.log(err)
+
+    if (err) return res.sendStatus(403)
+
+    req.user = user
+
+    next()
+  })
+}
+
 app.get('/', async (req: any, res: any) => {
   res.send(`received`)
 })
+
+app.post('/generateToken', (req: any, res: any) => {
+  const token = generateAccessToken({ username: req.body.username });
+  res.json(token);
+});
 
 /**
  * Date is passed as string in UTC format
  * Recurrence is array of week days
  */
-app.post('/lesson/create', async (req: any, res: any) => {
+app.post('/lesson/create', authenticateToken, async (req: any, res: any) => {
   const lesson: Lesson = req.body[0]
 
   let startDate: string = String(new Date(lesson.start).getTime() / 1000)
@@ -63,7 +90,7 @@ app.post('/lesson/create', async (req: any, res: any) => {
   res.send(`Record created 👌`)
 })
 
-app.get('/lesson/fetch', async (req: any, res: any) => {
+app.get('/lesson/fetch', authenticateToken, async (req: any, res: any) => {
   const userId: number = req.body[0].user
   const userLessons = await (queries.fetchLessons(userId))
 
@@ -104,7 +131,7 @@ app.get('/lesson/fetch', async (req: any, res: any) => {
   res.send(schedule)
 })
 
-app.put('/lesson/update', async (req: any, res: any) => {
+app.put('/lesson/update', authenticateToken, async (req: any, res: any) => {
   const request = req.body[0]
 
   const newTitle: string = request.hasOwnProperty('newTitle')  ? request.newTitle : ''
@@ -127,7 +154,7 @@ app.put('/lesson/update', async (req: any, res: any) => {
   res.send(`Lesson updated 👌`)
 })
 
-app.delete('/lesson/delete', async (req: any, res: any) => {
+app.delete('/lesson/delete', authenticateToken, async (req: any, res: any) => {
   const request = req.body[0]
   
   if (request.hasOwnProperty('lessonId')) {

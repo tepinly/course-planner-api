@@ -13,8 +13,9 @@ const app = express();
 app.use(express.json());
 const queries = require('./queries');
 const helper = require('./helper');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { PORT } = process.env;
+const { PORT, TOKEN_SECRET } = process.env;
 const weekDays = {
     sun: 0,
     mon: 1,
@@ -42,14 +43,34 @@ function createRecurrence(lessonId, lesson, startDate, expDate) {
         }
     });
 }
+function generateAccessToken(username) {
+    return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: '1800s' });
+}
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null)
+        return res.sendStatus(401);
+    jwt.verify(token, TOKEN_SECRET, (err, user) => {
+        console.log(err);
+        if (err)
+            return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+}
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send(`received`);
 }));
+app.post('/generateToken', (req, res) => {
+    const token = generateAccessToken({ username: req.body.username });
+    res.json(token);
+});
 /**
  * Date is passed as string in UTC format
  * Recurrence is array of week days
  */
-app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/lesson/create', authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const lesson = req.body[0];
     let startDate = String(new Date(lesson.start).getTime() / 1000);
     let expDate = String(new Date(lesson.exp ? lesson.exp : lesson.start).getTime() / 1000);
@@ -57,7 +78,7 @@ app.post('/lesson/create', (req, res) => __awaiter(void 0, void 0, void 0, funct
     yield createRecurrence(yield newLesson.id, lesson, startDate, expDate);
     res.send(`Record created 👌`);
 }));
-app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get('/lesson/fetch', authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.body[0].user;
     const userLessons = yield (queries.fetchLessons(userId));
     const schedule = [];
@@ -93,7 +114,7 @@ app.get('/lesson/fetch', (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
     res.send(schedule);
 }));
-app.put('/lesson/update', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.put('/lesson/update', authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const request = req.body[0];
     const newTitle = request.hasOwnProperty('newTitle') ? request.newTitle : '';
     const newDescription = request.hasOwnProperty('newDescription') ? request.newDescription : '';
@@ -111,7 +132,7 @@ app.put('/lesson/update', (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
     res.send(`Lesson updated 👌`);
 }));
-app.delete('/lesson/delete', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.delete('/lesson/delete', authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const request = req.body[0];
     if (request.hasOwnProperty('lessonId')) {
         yield queries.deleteLesson(request.lessonId);
